@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { ConfigChatInterface } from "@/components/projects/config-chat-interface";
+import { ConfigPreviewPanel } from "@/components/projects/config-preview-panel";
+import { MessageSquare, ArrowLeft } from "lucide-react";
+import type { ProjectConfigurationData } from "@/lib/validators/config-schema";
 
 interface ProcessCategory {
   key: string;
@@ -17,6 +21,7 @@ interface ProcessCategory {
 
 export default function ProjectSettingsPage() {
   const t = useTranslations("projects");
+  const tChat = useTranslations("configChat");
   const locale = useLocale();
   const router = useRouter();
   const params = useParams();
@@ -26,6 +31,10 @@ export default function ProjectSettingsPage() {
   const [categories, setCategories] = useState<ProcessCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showConfigChat, setShowConfigChat] = useState(false);
+  const [extractedConfig, setExtractedConfig] =
+    useState<ProjectConfigurationData | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     fetch(`/api/projects/${projectId}`)
@@ -47,7 +56,11 @@ export default function ProjectSettingsPage() {
     setCategories(categories.filter((_, i) => i !== index));
   };
 
-  const updateCategory = (index: number, field: keyof ProcessCategory, value: string) => {
+  const updateCategory = (
+    index: number,
+    field: keyof ProcessCategory,
+    value: string
+  ) => {
     const updated = [...categories];
     updated[index] = { ...updated[index], [field]: value };
     setCategories(updated);
@@ -62,7 +75,7 @@ export default function ProjectSettingsPage() {
         body: JSON.stringify({
           version,
           configuration: {
-            industryClassification: { sector: "TODO" }, // Would be loaded from current config
+            industryClassification: { sector: "TODO" },
             processCategories: categories.filter((c) => c.key.trim()),
           },
         }),
@@ -70,7 +83,6 @@ export default function ProjectSettingsPage() {
 
       if (res.status === 409) {
         toast.error(t("configConflict"));
-        // Reload to get latest version
         const data = await res.json();
         setVersion(data.currentVersion);
         return;
@@ -93,13 +105,103 @@ export default function ProjectSettingsPage() {
     }
   };
 
+  const handleApplyConfig = useCallback(async () => {
+    if (!extractedConfig) return;
+    setIsApplying(true);
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/configure-chat/apply`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            configuration: extractedConfig,
+            version,
+          }),
+        }
+      );
+
+      if (res.status === 409) {
+        toast.error(t("configConflict"));
+        return;
+      }
+
+      if (!res.ok) {
+        toast.error(tChat("applyError"));
+        return;
+      }
+
+      const data = await res.json();
+      setVersion(data.configuration.version);
+      setCategories(data.configuration.processCategories || []);
+      toast.success(tChat("applied"));
+      setShowConfigChat(false);
+      setExtractedConfig(null);
+    } catch {
+      toast.error(tChat("applyError"));
+    } finally {
+      setIsApplying(false);
+    }
+  }, [extractedConfig, projectId, version, t, tChat]);
+
+  const handleToggleConfigChat = useCallback(() => {
+    if (showConfigChat && extractedConfig) {
+      if (!window.confirm(tChat("unsavedChanges"))) {
+        return;
+      }
+    }
+    setShowConfigChat(!showConfigChat);
+    if (showConfigChat) {
+      setExtractedConfig(null);
+    }
+  }, [showConfigChat, extractedConfig, tChat]);
+
   if (loading) {
     return <div className="text-muted-foreground">{t("loading")}</div>;
   }
 
+  if (showConfigChat) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">{tChat("title")}</h1>
+          <Button variant="outline" onClick={handleToggleConfigChat}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {tChat("backToForm")}
+          </Button>
+        </div>
+
+        <div className="flex gap-4 h-[calc(100vh-12rem)]">
+          {/* Chat area */}
+          <div className="flex-1 border rounded-lg overflow-hidden">
+            <ConfigChatInterface
+              projectId={projectId}
+              onConfigExtracted={setExtractedConfig}
+            />
+          </div>
+
+          {/* Preview panel */}
+          <div className="w-80 overflow-y-auto">
+            <ConfigPreviewPanel
+              configuration={extractedConfig}
+              onApply={handleApplyConfig}
+              isApplying={isApplying}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold">{t("projectSettings")}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{t("projectSettings")}</h1>
+        <Button variant="outline" onClick={handleToggleConfigChat}>
+          <MessageSquare className="h-4 w-4 mr-2" />
+          {tChat("openChat")}
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
@@ -112,14 +214,18 @@ export default function ProjectSettingsPage() {
                 <Label className="text-xs">{t("categoryKey")}</Label>
                 <Input
                   value={cat.key}
-                  onChange={(e) => updateCategory(index, "key", e.target.value)}
+                  onChange={(e) =>
+                    updateCategory(index, "key", e.target.value)
+                  }
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{t("labelDe")}</Label>
                 <Input
                   value={cat.labelDe}
-                  onChange={(e) => updateCategory(index, "labelDe", e.target.value)}
+                  onChange={(e) =>
+                    updateCategory(index, "labelDe", e.target.value)
+                  }
                 />
               </div>
               <div className="flex gap-2">
@@ -127,7 +233,9 @@ export default function ProjectSettingsPage() {
                   <Label className="text-xs">{t("labelEn")}</Label>
                   <Input
                     value={cat.labelEn}
-                    onChange={(e) => updateCategory(index, "labelEn", e.target.value)}
+                    onChange={(e) =>
+                      updateCategory(index, "labelEn", e.target.value)
+                    }
                   />
                 </div>
                 <Button
@@ -142,7 +250,12 @@ export default function ProjectSettingsPage() {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={addCategory}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addCategory}
+          >
             {t("addCategory")}
           </Button>
         </CardContent>

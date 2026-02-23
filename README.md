@@ -38,9 +38,10 @@ Consultants manage projects, configure industry context and terminology, and rev
 - **UI refinements** — polish the overall user experience, improve layout and responsiveness, streamline navigation flows
 - **Voice interviews** — option to conduct interviews via voice input/output, making process capture more natural and accessible
 - **Deeper context-driven AI** — richer use of project configuration, past interviews, and organizational knowledge to make AI conversations more relevant and precise
+- **SAP S/4HANA transition support** — compare captured as-is processes against SAP standard/best-practice processes to identify optimization potentials, required change topics, and gaps. The app can serve as a transition companion for S/4HANA migrations: it knows how a process should look in S/4, compares it to the current state, and derives concrete action items — whether that's process optimization within the existing landscape or fundamental changes required by the new platform
 - Improved BPMN live-update mechanism (SSE or callback-based instead of polling)
 - End-to-end tests with Playwright
-- Process comparison and versioning
+- Process versioning and change tracking
 - Multi-user collaboration on interviews
 - Export to external BPMN tools
 

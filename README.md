@@ -34,12 +34,15 @@ Consultants manage projects, configure industry context and terminology, and rev
 
 ### Coming Up
 
+- **BPMN viewer & editor** — full interactive BPMN modeler so consultants and employees can view, edit, and refine generated process models directly in the browser
+- **UI refinements** — polish the overall user experience, improve layout and responsiveness, streamline navigation flows
+- **Voice interviews** — option to conduct interviews via voice input/output, making process capture more natural and accessible
+- **Deeper context-driven AI** — richer use of project configuration, past interviews, and organizational knowledge to make AI conversations more relevant and precise
 - Improved BPMN live-update mechanism (SSE or callback-based instead of polling)
 - End-to-end tests with Playwright
 - Process comparison and versioning
 - Multi-user collaboration on interviews
 - Export to external BPMN tools
-- Advanced analytics dashboard
 
 ## Tech Stack
 

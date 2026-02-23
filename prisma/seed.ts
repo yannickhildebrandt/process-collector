@@ -7,6 +7,8 @@ async function main() {
   console.log("Seeding database...");
 
   // Clean existing data
+  await prisma.interviewMessage.deleteMany();
+  await prisma.interviewSession.deleteMany();
   await prisma.processEntry.deleteMany();
   await prisma.projectConfiguration.deleteMany();
   await prisma.projectMember.deleteMany();
@@ -295,6 +297,94 @@ A customer places an order via the online portal or sales representative.
     },
   });
 
+  // Create sample in-progress InterviewSession
+  const interview = await prisma.interviewSession.create({
+    data: {
+      projectId: project.id,
+      employeeId: employee.id,
+      processCategory: "procurement",
+      title: "Raw Materials Procurement",
+      status: "IN_PROGRESS",
+      currentSummaryJson: {
+        processName: "Raw Materials Procurement",
+        trigger: {
+          description: "A department submits a purchase request",
+          type: "manual",
+        },
+        steps: [
+          {
+            id: "step-1",
+            name: "Submit Purchase Request",
+            description: "Department head fills out purchase request form",
+            type: "task",
+            actor: "Department Head",
+            system: "SAP",
+          },
+          {
+            id: "step-2",
+            name: "Manager Approval",
+            description: "Manager reviews and approves the request",
+            type: "decision",
+            actor: "Manager",
+            conditions: {
+              "Under 5000 EUR": "step-3",
+              "Over 5000 EUR": "step-2b",
+            },
+          },
+        ],
+        roles: [
+          { name: "Department Head", description: "Initiates the purchase request" },
+          { name: "Manager", description: "Approves requests under 5000 EUR" },
+        ],
+        systems: [
+          { name: "SAP", description: "Enterprise resource planning system" },
+        ],
+        metrics: [],
+      },
+    },
+  });
+
+  // Add sample interview messages
+  await prisma.interviewMessage.createMany({
+    data: [
+      {
+        interviewSessionId: interview.id,
+        role: "ASSISTANT",
+        content:
+          "Hello! I'm here to help document your business process for Raw Materials Procurement. Let's get started.\n\nCould you tell me what triggers this process? What event or action starts it?",
+        orderIndex: 0,
+      },
+      {
+        interviewSessionId: interview.id,
+        role: "USER",
+        content:
+          "The process starts when a department submits a purchase request. Usually the department head fills out the form in SAP.",
+        orderIndex: 1,
+      },
+      {
+        interviewSessionId: interview.id,
+        role: "ASSISTANT",
+        content:
+          "Thank you! So the trigger is a purchase request submitted by a department head through SAP. That's clear.\n\nNow, what happens after the purchase request is submitted? Could you walk me through the next steps?",
+        orderIndex: 2,
+      },
+      {
+        interviewSessionId: interview.id,
+        role: "USER",
+        content:
+          "The manager reviews the request. If it's under 5000 EUR, the manager can approve it directly. If it's over 5000 EUR, it needs to go to the director for approval.",
+        orderIndex: 3,
+      },
+      {
+        interviewSessionId: interview.id,
+        role: "ASSISTANT",
+        content:
+          "I see, so there's an approval decision point based on the amount. Under 5000 EUR the manager approves, over 5000 EUR it escalates to the director.\n\nWhat happens after the approval is given? What are the next steps in the procurement process?",
+        orderIndex: 4,
+      },
+    ],
+  });
+
   // Create LLM Provider Configs
   await prisma.lLMProviderConfig.create({
     data: {
@@ -305,7 +395,7 @@ A customer places an order via the online portal or sales representative.
       modelId: "mock-v1",
       maxTokens: 4096,
       dpaActive: true,
-      isDefault: true,
+      isDefault: false,
     },
   });
 
@@ -318,7 +408,7 @@ A customer places an order via the online portal or sales representative.
       modelId: "claude-sonnet-4-6",
       maxTokens: 4096,
       dpaActive: true,
-      isDefault: false,
+      isDefault: true,
     },
   });
 
@@ -327,7 +417,7 @@ A customer places an order via the online portal or sales representative.
   console.log("  Employee: employee@client.com (magic link)");
   console.log("  Project: Acme Corp Process Capture");
   console.log("  Sample process: Order-to-Cash");
-  console.log("  LLM Providers: mock (default), claude");
+  console.log("  LLM Providers: mock, claude (default)");
 }
 
 main()

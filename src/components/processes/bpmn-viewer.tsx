@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 
 interface BpmnViewerProps {
   xml: string;
+  height?: string;
 }
 
-export function BpmnViewer({ xml }: BpmnViewerProps) {
+export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
   const t = useTranslations("processes");
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -16,11 +17,14 @@ export function BpmnViewer({ xml }: BpmnViewerProps) {
   useEffect(() => {
     if (!containerRef.current || !xml) return;
 
+    // Reset state on new XML
+    setLoading(true);
+    setError(false);
+
     let viewer: { destroy: () => void } | null = null;
 
     async function initViewer() {
       try {
-        // Dynamic import to avoid SSR issues
         const { default: NavigatedViewer } = await import("bpmn-js/lib/NavigatedViewer");
 
         viewer = new NavigatedViewer({
@@ -29,7 +33,6 @@ export function BpmnViewer({ xml }: BpmnViewerProps) {
 
         await (viewer as unknown as { importXML: (xml: string) => Promise<unknown> }).importXML(xml);
 
-        // Fit the diagram to the container
         const canvas = (viewer as unknown as { get: (name: string) => { zoom: (type: string) => void } }).get("canvas");
         canvas.zoom("fit-viewport");
 
@@ -67,7 +70,8 @@ export function BpmnViewer({ xml }: BpmnViewerProps) {
       )}
       <div
         ref={containerRef}
-        className="h-[500px] border rounded-md bg-white"
+        className="border rounded-md bg-white"
+        style={{ height }}
       />
     </div>
   );

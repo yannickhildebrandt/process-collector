@@ -29,6 +29,18 @@ enum ProcessEntryStatus {
   VALIDATED
 }
 
+enum InterviewStatus {
+  IN_PROGRESS
+  SUMMARY_REVIEW
+  COMPLETED
+  STALE
+}
+
+enum MessageRole {
+  ASSISTANT
+  USER
+}
+
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
@@ -40,10 +52,11 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions       Session[]
-  accounts       Account[]
-  projectMembers ProjectMember[]
-  processEntries ProcessEntry[]
+  sessions           Session[]
+  accounts           Account[]
+  projectMembers     ProjectMember[]
+  processEntries     ProcessEntry[]
+  interviewSessions  InterviewSession[]
 
   @@map("user")
 }
@@ -105,9 +118,10 @@ model Project {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  members        ProjectMember[]
-  configuration  ProjectConfiguration?
-  processEntries ProcessEntry[]
+  members            ProjectMember[]
+  configuration      ProjectConfiguration?
+  processEntries     ProcessEntry[]
+  interviewSessions  InterviewSession[]
 }
 
 model ProjectMember {
@@ -137,20 +151,56 @@ model ProjectConfiguration {
 }
 
 model ProcessEntry {
-  id              String             @id @default(uuid())
-  projectId       String
-  createdById     String
-  title           String
-  status          ProcessEntryStatus @default(DRAFT)
-  markdownContent String?            @db.Text
-  bpmnXml         String?            @db.Text
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                 String             @id @default(uuid())
+  projectId          String
+  createdById        String
+  title              String
+  status             ProcessEntryStatus @default(DRAFT)
+  markdownContent    String?            @db.Text
+  bpmnXml            String?            @db.Text
+  interviewSessionId String?            @unique
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy User    @relation(fields: [createdById], references: [id])
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  interviewSession InterviewSession? @relation(fields: [interviewSessionId], references: [id])
 
   @@index([projectId, status])
+}
+
+model InterviewSession {
+  id                    String          @id @default(uuid())
+  projectId             String
+  employeeId            String
+  processCategory       String
+  title                 String
+  status                InterviewStatus @default(IN_PROGRESS)
+  currentSummaryJson    Json?
+  messageRetentionUntil DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee User     @relation(fields: [employeeId], references: [id])
+  messages InterviewMessage[]
+  processEntry ProcessEntry?
+
+  @@index([projectId, employeeId])
+  @@index([status])
+}
+
+model InterviewMessage {
+  id                 String      @id @default(uuid())
+  interviewSessionId String
+  role               MessageRole
+  content            String      @db.Text
+  orderIndex         Int
+  createdAt          DateTime    @default(now())
+
+  interviewSession InterviewSession @relation(fields: [interviewSessionId], references: [id], onDelete: Cascade)
+
+  @@index([interviewSessionId, orderIndex])
 }
 
 model LLMProviderConfig {

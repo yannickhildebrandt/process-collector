@@ -6,6 +6,8 @@ import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { WelcomeCard } from "@/components/dashboard/welcome-card";
 import { ProcessCategoryList } from "@/components/dashboard/process-category-list";
+import { NewInterviewDialog } from "@/components/interview/new-interview-dialog";
+import { InterviewList } from "@/components/dashboard/interview-list";
 
 interface ProjectData {
   id: string;
@@ -16,27 +18,40 @@ interface ProjectData {
   };
 }
 
+interface InterviewData {
+  id: string;
+  processCategory: string;
+  title: string;
+  status: "IN_PROGRESS" | "SUMMARY_REVIEW" | "COMPLETED" | "STALE";
+  messageCount: number;
+  updatedAt: string;
+}
+
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const { data: session } = useSession();
   const [project, setProject] = useState<ProjectData | null>(null);
+  const [interviews, setInterviews] = useState<InterviewData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/projects")
       .then((res) => res.json())
-      .then((data) => {
+      .then(async (data) => {
         if (data.projects && data.projects.length > 0) {
-          // Employee sees only their single assigned project
           const proj = data.projects[0];
-          // Fetch full project details with configuration
-          return fetch(`/api/projects/${proj.id}`).then((r) => r.json());
-        }
-        return null;
-      })
-      .then((data) => {
-        if (data?.project) {
-          setProject(data.project);
+          // Fetch project details and interviews in parallel
+          const [projectRes, interviewsRes] = await Promise.all([
+            fetch(`/api/projects/${proj.id}`).then((r) => r.json()),
+            fetch(`/api/projects/${proj.id}/interviews`).then((r) => r.json()),
+          ]);
+          if (projectRes?.project) {
+            setProject(projectRes.project);
+          }
+          if (interviewsRes?.interviews) {
+            setInterviews(interviewsRes.interviews);
+          }
         }
       })
       .finally(() => setLoading(false));
@@ -62,6 +77,10 @@ export default function DashboardPage() {
         industry={project.industry}
       />
 
+      {interviews.length > 0 && (
+        <InterviewList interviews={interviews} projectId={project.id} />
+      )}
+
       {project.configuration?.processCategories && (
         <ProcessCategoryList
           categories={project.configuration.processCategories}
@@ -69,13 +88,19 @@ export default function DashboardPage() {
       )}
 
       <div className="flex justify-center">
-        <Button size="lg" disabled title={t("comingSoon")}>
+        <Button size="lg" onClick={() => setDialogOpen(true)}>
           {t("startProcess")}
         </Button>
       </div>
-      <p className="text-center text-sm text-muted-foreground">
-        {t("comingSoon")}
-      </p>
+
+      {project.configuration?.processCategories && (
+        <NewInterviewDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          projectId={project.id}
+          categories={project.configuration.processCategories}
+        />
+      )}
     </div>
   );
 }

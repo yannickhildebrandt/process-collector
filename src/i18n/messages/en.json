@@ -111,7 +111,10 @@
     "bpmnSection": "Process Diagram",
     "bpmnUnavailable": "Diagram temporarily unavailable.",
     "bpmnLoading": "Loading diagram...",
-    "backToProject": "Back to Project"
+    "backToProject": "Back to Project",
+    "tabDiagram": "Diagram",
+    "tabDocumentation": "Documentation",
+    "noContent": "This process has not been documented yet."
   },
   "interview": {
     "startNew": "Start New Interview",

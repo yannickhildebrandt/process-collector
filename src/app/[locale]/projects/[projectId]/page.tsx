@@ -24,18 +24,33 @@ interface ProjectDetail {
   members: { id: string; name: string; email: string; role: string }[];
 }
 
+interface ProcessEntry {
+  id: string;
+  title: string;
+  status: string;
+  createdBy: { id: string; displayName: string };
+  createdAt: string;
+}
+
 export default function ProjectDetailPage() {
   const t = useTranslations("projects");
+  const tp = useTranslations("processes");
   const locale = useLocale();
   const params = useParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [processes, setProcesses] = useState<ProcessEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/projects/${projectId}`)
-      .then((res) => res.json())
-      .then((data) => setProject(data.project))
+    Promise.all([
+      fetch(`/api/projects/${projectId}`).then((res) => res.json()),
+      fetch(`/api/projects/${projectId}/processes`).then((res) => res.json()),
+    ])
+      .then(([projectData, processData]) => {
+        setProject(projectData.project);
+        setProcesses(processData.processes || []);
+      })
       .finally(() => setLoading(false));
   }, [projectId]);
 
@@ -129,6 +144,35 @@ export default function ProjectDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tp("title")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {processes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{tp("noProcesses")}</p>
+          ) : (
+            <div className="space-y-2">
+              {processes.map((proc) => (
+                <Link
+                  key={proc.id}
+                  href={`/${locale}/projects/${projectId}/processes/${proc.id}`}
+                  className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors"
+                >
+                  <div>
+                    <span className="font-medium">{proc.title}</span>
+                    <p className="text-sm text-muted-foreground">
+                      {tp("createdBy")}: {proc.createdBy.displayName}
+                    </p>
+                  </div>
+                  <Badge variant="outline">{proc.status}</Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

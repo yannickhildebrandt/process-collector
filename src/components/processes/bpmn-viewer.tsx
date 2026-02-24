@@ -61,8 +61,10 @@ export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
     );
   }
 
+  const isFill = height === "100%";
+
   return (
-    <div className="relative">
+    <div className={isFill ? "relative h-full" : "relative"}>
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-md">
           {t("bpmnLoading")}

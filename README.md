@@ -30,6 +30,7 @@ Consultants manage projects, configure industry context and terminology, and rev
 
 ### Recent Additions
 
+- **Diagram export** — export BPMN diagrams from the process detail page as high-resolution PNG (2x scale) or vector PDF with selectable paper size (A0–A4, landscape). Dropdown menu with sub-menu for paper sizes. jsPDF and svg2pdf.js are dynamically imported for code splitting.
 - **Process detail viewer** — side-by-side layout with a large BPMN diagram viewer and a structured summary sidebar (steps, roles, systems, metrics). Mobile responsive with tabbed layout below 1024px. Handles content variations gracefully (BPMN only, markdown only, empty state).
 - **Process list on project page** — consultants can now browse and click into documented processes directly from the project detail page
 - **Brand design polish** — Eggers & Partner brand colors (cyan-blue primary), pill-shaped buttons, tighter heading letter-spacing, WCAG AA compliant contrast
@@ -46,7 +47,7 @@ Consultants manage projects, configure industry context and terminology, and rev
 - End-to-end tests with Playwright
 - Process versioning and change tracking
 - Multi-user collaboration on interviews
-- Export to external BPMN tools
+- ~~Export to external BPMN tools~~ (PNG + PDF export shipped in 007)
 
 ## Tech Stack
 
@@ -95,7 +96,7 @@ src/
     validators/            # Zod schemas for config
   i18n/messages/           # en.json, de.json
 prisma/                    # Schema + migrations + seed
-specs/                     # Feature specifications (001–006)
+specs/                     # Feature specifications (001–007)
 tests/integration/         # Vitest integration tests
 ```
 
@@ -184,6 +185,7 @@ This project uses a structured specification workflow (`.specify/`):
 | 004 | UI Refinements (Mobile Tabs, Responsive Nav, Skeletons) | Implemented |
 | 005 | Brand Design Polish (Eggers & Partner Colors, Pill Buttons) | Implemented |
 | 006 | Process Detail Viewer (Side-by-Side BPMN + Summary) | Implemented |
+| 007 | Diagram Export (PNG + PDF with Paper Size Selection) | Implemented |
 
 ## Architecture Decisions
 

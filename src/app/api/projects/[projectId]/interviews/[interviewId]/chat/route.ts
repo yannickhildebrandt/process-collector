@@ -8,7 +8,10 @@ import {
 } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { getAIProvider } from "@/lib/llm/ai-sdk-provider";
-import { buildSystemPrompt } from "@/lib/interview/prompt-builder";
+import {
+  getOrBuildConfig,
+  buildCachedSystemPrompt,
+} from "@/lib/interview/config-cache";
 import { sanitizeUserMessage } from "@/lib/interview/pii-middleware";
 import { extractSummary } from "@/lib/interview/summary-extractor";
 import { emitSummaryUpdate } from "@/lib/interview/summary-events";
@@ -47,9 +50,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     where: { id: interviewId },
     include: {
       messages: { orderBy: { orderIndex: "asc" } },
-      project: {
-        include: { configuration: true },
-      },
     },
   });
 
@@ -107,35 +107,31 @@ export async function POST(request: NextRequest, { params }: Params) {
   });
 
   // Build conversation history for AI (with sanitized content)
-  const conversationHistory: ModelMessage[] = interview.messages.map((m) => ({
+  let conversationHistory: ModelMessage[] = interview.messages.map((m) => ({
     role: m.role === "ASSISTANT" ? ("assistant" as const) : ("user" as const),
     content: m.content,
   }));
   conversationHistory.push({ role: "user", content: sanitized });
 
-  // Build system prompt from project config
-  const config = interview.project.configuration;
-  const industryClassification = (config?.industryClassification ?? {}) as {
-    sector?: string;
-  };
+  // Conversation windowing: send only the last 15 messages to reduce tokens
+  const WINDOW_SIZE = 15;
+  if (conversationHistory.length > WINDOW_SIZE) {
+    conversationHistory = conversationHistory.slice(-WINDOW_SIZE);
+  }
+
+  // Build system prompt from cached project config
+  const cachedConfig = await getOrBuildConfig(projectId);
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
 
-  const systemPrompt = buildSystemPrompt({
-    industry: interview.project.industry,
-    sector: industryClassification.sector,
+  const systemPrompt = buildCachedSystemPrompt(cachedConfig, {
     processCategory: interview.processCategory,
     processTitle: interview.title,
     language: user?.preferredLang === "DE" ? "de" : "en",
-    customTerminology:
-      (config?.customTerminology as Record<
-        string,
-        { de: string; en: string }
-      >) ?? undefined,
-    interviewTemplateRefs:
-      (config?.interviewTemplateRefs as string[]) ?? undefined,
+    currentSummary:
+      (interview.currentSummaryJson as ProcessSummary | undefined) ?? undefined,
   });
 
   let provider;
@@ -170,26 +166,64 @@ export async function POST(request: NextRequest, { params }: Params) {
         data: { updatedAt: new Date() },
       });
 
-      // Try to update the summary (non-blocking, best effort)
-      try {
+      // Batched summary extraction: only extract every 3 messages
+      const aiMessageIndex = nextOrderIndex + 1;
+      const messagesSinceLastExtraction =
+        aiMessageIndex - interview.lastSummarizedIndex;
+
+      if (messagesSinceLastExtraction >= 3) {
         const allMessages: ModelMessage[] = [
           ...conversationHistory,
           { role: "assistant" as const, content: text },
         ];
         const existingSummary =
           (interview.currentSummaryJson as ProcessSummary | null) ?? null;
-        const updatedSummary = await extractSummary(
-          provider,
-          allMessages,
-          existingSummary
-        );
-        await prisma.interviewSession.update({
-          where: { id: interviewId },
-          data: { currentSummaryJson: updatedSummary as object },
-        });
-        emitSummaryUpdate(interviewId, updatedSummary as Record<string, unknown>);
-      } catch (e) {
-        console.error("[Chat] Summary extraction failed:", e);
+
+        // Incremental extraction: only process messages since last extraction
+        const startFromIndex =
+          interview.lastSummarizedIndex >= 0
+            ? interview.lastSummarizedIndex + 1
+            : undefined;
+
+        let updatedSummary: ProcessSummary | null = null;
+        try {
+          updatedSummary = await extractSummary(
+            provider,
+            allMessages,
+            existingSummary,
+            startFromIndex
+          );
+        } catch (e) {
+          // Retry once on failure
+          console.warn("[Chat] Summary extraction failed, retrying:", e);
+          try {
+            updatedSummary = await extractSummary(
+              provider,
+              allMessages,
+              existingSummary,
+              startFromIndex
+            );
+          } catch (retryError) {
+            console.error(
+              "[Chat] Summary extraction retry failed:",
+              retryError
+            );
+          }
+        }
+
+        if (updatedSummary) {
+          await prisma.interviewSession.update({
+            where: { id: interviewId },
+            data: {
+              currentSummaryJson: updatedSummary as object,
+              lastSummarizedIndex: aiMessageIndex,
+            },
+          });
+          emitSummaryUpdate(
+            interviewId,
+            updatedSummary as Record<string, unknown>
+          );
+        }
       }
     },
   });

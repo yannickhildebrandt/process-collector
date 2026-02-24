@@ -187,12 +187,13 @@ export default function InterviewPage() {
       }, 8000);
     });
 
-    // Safety net: 30s timeout
+    // Safety net: 15s timeout (summary extraction is batched every 3 messages,
+    // so not every message triggers extraction)
     fallbackTimerRef.current = setTimeout(() => {
       cleanupSSE();
       fetchInterview();
       setSummaryExtracting(false);
-    }, 30000);
+    }, 15000);
   }, [projectId, interviewId, fetchInterview, cleanupSSE]);
 
   // Clean up SSE and timers on unmount

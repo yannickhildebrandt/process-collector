@@ -1,3 +1,5 @@
+import type { ProcessSummary } from "./schemas";
+
 interface ProjectConfig {
   industry: string;
   sector?: string;
@@ -6,6 +8,7 @@ interface ProjectConfig {
   language: string;
   customTerminology?: Record<string, { de: string; en: string }>;
   interviewTemplateRefs?: string[];
+  currentSummary?: ProcessSummary;
 }
 
 /**
@@ -59,7 +62,40 @@ BEHAVIOR:
 - Ask one question at a time.
 - Acknowledge the employee's answers before moving on.
 - When you've covered all areas, let the employee know you have enough
-  information and suggest reviewing the summary.`;
+  information and suggest reviewing the summary.
+
+FORMATTING:
+- Use **bold** for key terms and process names.
+- Use numbered lists when asking multiple follow-up questions.
+- Use bullet points when recapping or summarizing captured information.${config.currentSummary ? buildSummaryContext(config.currentSummary) : ""}`;
+}
+
+function buildSummaryContext(summary: ProcessSummary): string {
+  const parts: string[] = [];
+
+  if (summary.processName) parts.push(`- Process Name: ${summary.processName}`);
+  if (summary.trigger?.description)
+    parts.push(`- Trigger: ${summary.trigger.description}`);
+  if (summary.steps && summary.steps.length > 0)
+    parts.push(
+      `- Steps: ${summary.steps.map((s) => s.name).join(", ")}`
+    );
+  if (summary.roles && summary.roles.length > 0)
+    parts.push(
+      `- Roles: ${summary.roles.map((r) => r.name).join(", ")}`
+    );
+  if (summary.systems && summary.systems.length > 0)
+    parts.push(
+      `- Systems: ${summary.systems.map((s) => s.name).join(", ")}`
+    );
+  if (summary.metrics && summary.metrics.length > 0)
+    parts.push(
+      `- Metrics: ${summary.metrics.map((m) => m.name).join(", ")}`
+    );
+
+  if (parts.length === 0) return "";
+
+  return `\n\nCURRENT PROCESS SUMMARY (captured so far):\n${parts.join("\n")}`;
 }
 
 function buildIndustryHints(industry: string): string {

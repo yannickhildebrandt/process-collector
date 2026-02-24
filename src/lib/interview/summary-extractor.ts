@@ -14,9 +14,16 @@ import type { ModelMessage } from "ai";
 export async function extractSummary(
   provider: AIProviderResult,
   messages: ModelMessage[],
-  existingSummary: ProcessSummary | null
+  existingSummary: ProcessSummary | null,
+  startFromIndex?: number
 ): Promise<ProcessSummary> {
-  const conversationText = messages
+  // When startFromIndex is provided, only include messages from that index onwards
+  const relevantMessages =
+    startFromIndex !== undefined && startFromIndex >= 0
+      ? messages.filter((_, i) => i >= startFromIndex)
+      : messages;
+
+  const conversationText = relevantMessages
     .map((m) => {
       const role = m.role === "assistant" ? "AI Interviewer" : "Employee";
       const content =

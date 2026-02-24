@@ -26,6 +26,9 @@ export async function GET(
       createdBy: {
         select: { id: true, name: true },
       },
+      interviewSession: {
+        select: { currentSummaryJson: true },
+      },
     },
   });
 
@@ -38,6 +41,7 @@ export async function GET(
       status: process.status,
       markdownContent: process.markdownContent,
       bpmnXml: process.bpmnXml,
+      summaryJson: process.interviewSession?.currentSummaryJson ?? null,
       createdBy: {
         id: process.createdBy.id,
         displayName: process.createdBy.name,

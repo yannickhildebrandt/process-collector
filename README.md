@@ -28,18 +28,21 @@ Consultants manage projects, configure industry context and terminology, and rev
 - **PII filtering** — sensitive data stripped before sending to LLM
 - **Data-driven configuration** — industry classification, process categories, custom terminology, interview template refs
 
-### Known Issues
+### Recent Additions
 
-- **Live BPMN update timing** — the BPMN diagram in the interview sidebar sometimes doesn't refresh after a message because the server-side summary extraction (a separate AI call) takes longer than the client polling window. Fix coming in the next version.
+- **Process detail viewer** — side-by-side layout with a large BPMN diagram viewer and a structured summary sidebar (steps, roles, systems, metrics). Mobile responsive with tabbed layout below 1024px. Handles content variations gracefully (BPMN only, markdown only, empty state).
+- **Process list on project page** — consultants can now browse and click into documented processes directly from the project detail page
+- **Brand design polish** — Eggers & Partner brand colors (cyan-blue primary), pill-shaped buttons, tighter heading letter-spacing, WCAG AA compliant contrast
+- **On-demand BPMN generation** — the interview sidebar BPMN diagram is now generated on demand via a button (Generate / Regenerate) instead of auto-updating on every summary change
+- **Live summary via SSE** — replaced polling with Server-Sent Events for real-time summary updates during interviews, with 30s fallback timeout
+- **UI refinements** — mobile tab switching (Chat/Summary) on interview page, responsive sidebar navigation, loading skeletons, dev login shortcut
 
 ### Coming Up
 
-- **BPMN viewer & editor** — full interactive BPMN modeler so consultants and employees can view, edit, and refine generated process models directly in the browser
-- **UI refinements** — polish the overall user experience, improve layout and responsiveness, streamline navigation flows
+- **BPMN editor** — full interactive BPMN modeler so consultants can view, edit, and refine generated process models directly in the browser
 - **Voice interviews** — option to conduct interviews via voice input/output, making process capture more natural and accessible
 - **Deeper context-driven AI** — richer use of project configuration, past interviews, and organizational knowledge to make AI conversations more relevant and precise
 - **SAP S/4HANA transition support** — compare captured as-is processes against SAP standard/best-practice processes to identify optimization potentials, required change topics, and gaps. The app can serve as a transition companion for S/4HANA migrations: it knows how a process should look in S/4, compares it to the current state, and derives concrete action items — whether that's process optimization within the existing landscape or fundamental changes required by the new platform
-- Improved BPMN live-update mechanism (SSE or callback-based instead of polling)
 - End-to-end tests with Playwright
 - Process versioning and change tracking
 - Multi-user collaboration on interviews
@@ -92,7 +95,7 @@ src/
     validators/            # Zod schemas for config
   i18n/messages/           # en.json, de.json
 prisma/                    # Schema + migrations + seed
-specs/                     # Feature specifications (001, 002, 003)
+specs/                     # Feature specifications (001–006)
 tests/integration/         # Vitest integration tests
 ```
 
@@ -178,6 +181,9 @@ This project uses a structured specification workflow (`.specify/`):
 | 001 | Platform Foundation | Implemented |
 | 002 | AI-Guided Interview | Implemented |
 | 003 | Interview Enhancements (BPMN, Greeting, Config Chat) | Implemented |
+| 004 | UI Refinements (Mobile Tabs, Responsive Nav, Skeletons) | Implemented |
+| 005 | Brand Design Polish (Eggers & Partner Colors, Pill Buttons) | Implemented |
+| 006 | Process Detail Viewer (Side-by-Side BPMN + Summary) | Implemented |
 
 ## Architecture Decisions
 

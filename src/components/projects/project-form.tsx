@@ -139,7 +139,7 @@ export function ProjectForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           {categories.map((cat, index) => (
-            <div key={index} className="grid grid-cols-3 gap-2 items-end">
+            <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
               <div className="space-y-1">
                 <Label className="text-xs">{t("categoryKey")}</Label>
                 <Input

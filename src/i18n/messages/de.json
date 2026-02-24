@@ -18,7 +18,8 @@
     "confirm": "Bestätigen",
     "language": "Sprache",
     "german": "Deutsch",
-    "english": "Englisch"
+    "english": "Englisch",
+    "menu": "Menü"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -147,7 +148,9 @@
     "bpmnSection": "Prozessdiagramm",
     "greetingFallback": "Hallo! Ich bin hier, um Ihnen bei der Dokumentation Ihres Geschäftsprozesses zu helfen. Bitte beschreiben Sie, worum es in diesem Prozess geht, und wir legen los.",
     "summaryUpdating": "Wird aktualisiert...",
-    "bpmnGenerate": "Diagramm erstellen"
+    "bpmnGenerate": "Diagramm erstellen",
+    "tabChat": "Chat",
+    "tabSummary": "Zusammenfassung"
   },
   "configChat": {
     "title": "Per KI konfigurieren",

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/interview/chat-interface";
 import { SummaryPanel } from "@/components/interview/summary-panel";
 import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface InterviewData {
   id: string;
@@ -38,7 +40,10 @@ export default function InterviewPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [summaryExtracting, setSummaryExtracting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"chat" | "summary">("chat");
+  const [summaryHasUpdate, setSummaryHasUpdate] = useState(false);
 
+  const activeTabRef = useRef<"chat" | "summary">("chat");
   const eventSourceRef = useRef<EventSource | null>(null);
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -162,6 +167,9 @@ export default function InterviewPage() {
         setInterview((prev) =>
           prev ? { ...prev, currentSummaryJson: summary } : null
         );
+        if (activeTabRef.current === "chat") {
+          setSummaryHasUpdate(true);
+        }
       } catch (e) {
         console.error("[Interview] Failed to parse summary SSE:", e);
       }
@@ -196,8 +204,29 @@ export default function InterviewPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-muted-foreground">Loading interview...</div>
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <div className="border-b px-4 py-3 flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 p-4 space-y-4">
+            <div className="flex justify-start">
+              <Skeleton className="h-20 w-3/4 rounded-lg" />
+            </div>
+            <div className="flex justify-end">
+              <Skeleton className="h-12 w-1/2 rounded-lg" />
+            </div>
+          </div>
+          <div className="w-80 border-l p-4 hidden lg:block space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -257,10 +286,53 @@ export default function InterviewPage() {
         </div>
       </div>
 
+      {/* Mobile tab bar */}
+      <div className="border-b lg:hidden">
+        <div className="flex">
+          <button
+            className={cn(
+              "flex-1 py-2 text-sm font-medium border-b-2 transition-colors",
+              activeTab === "chat"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground"
+            )}
+            onClick={() => {
+              setActiveTab("chat");
+              activeTabRef.current = "chat";
+            }}
+          >
+            {t("tabChat")}
+          </button>
+          <button
+            className={cn(
+              "flex-1 py-2 text-sm font-medium border-b-2 transition-colors relative",
+              activeTab === "summary"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground"
+            )}
+            onClick={() => {
+              setActiveTab("summary");
+              activeTabRef.current = "summary";
+              setSummaryHasUpdate(false);
+            }}
+          >
+            {t("tabSummary")}
+            {summaryHasUpdate && activeTab !== "summary" && (
+              <span className="absolute top-1 right-1/4 h-2 w-2 rounded-full bg-blue-500" />
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Main content: Chat + Summary panel */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Chat area */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Chat area — always visible on desktop, conditionally on mobile */}
+        <div
+          className={cn(
+            "flex-1 flex flex-col min-w-0",
+            activeTab !== "chat" && "hidden lg:flex"
+          )}
+        >
           <ChatInterface
             interviewId={interviewId}
             projectId={projectId}
@@ -270,8 +342,15 @@ export default function InterviewPage() {
           />
         </div>
 
-        {/* Summary sidebar */}
-        <div className="w-80 border-l overflow-y-auto p-4 hidden lg:block">
+        {/* Summary panel — sidebar on desktop, full-width tab on mobile */}
+        <div
+          className={cn(
+            "overflow-y-auto p-4",
+            activeTab === "summary"
+              ? "flex-1 lg:flex-none lg:w-80 lg:border-l"
+              : "hidden lg:block lg:w-80 lg:border-l"
+          )}
+        >
           <SummaryPanel
             summary={
               interview.currentSummaryJson as Parameters<

@@ -51,18 +51,35 @@ export async function POST(_request: NextRequest, { params }: Params) {
     );
   }
 
-  // Generate final summary from conversation history
+  // Generate final summary — incremental extraction using only new messages
   const messages: ModelMessage[] = interview.messages.map((m) => ({
     role: m.role === "ASSISTANT" ? ("assistant" as const) : ("user" as const),
     content: m.content,
   }));
 
+  const existingSummary =
+    (interview.currentSummaryJson as ProcessSummary | null) ?? null;
+
+  // Only process messages since last extraction
+  const startFromIndex =
+    interview.lastSummarizedIndex >= 0
+      ? interview.lastSummarizedIndex + 1
+      : undefined;
+
+  const maxOrderIndex =
+    interview.messages.length > 0
+      ? interview.messages[interview.messages.length - 1].orderIndex
+      : 0;
+
   let finalSummary: ProcessSummary;
   try {
     const provider = await getAIProvider();
-    const existingSummary =
-      (interview.currentSummaryJson as ProcessSummary | null) ?? null;
-    finalSummary = await extractSummary(provider, messages, existingSummary);
+    finalSummary = await extractSummary(
+      provider,
+      messages,
+      existingSummary,
+      startFromIndex
+    );
   } catch (e) {
     console.error("[RequestSummary] Summary extraction failed:", e);
     // Fall back to existing summary if available
@@ -81,6 +98,7 @@ export async function POST(_request: NextRequest, { params }: Params) {
     data: {
       status: "SUMMARY_REVIEW",
       currentSummaryJson: finalSummary as object,
+      lastSummarizedIndex: maxOrderIndex,
     },
   });
 

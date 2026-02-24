@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthSession, unauthorized, forbidden, notFound, badRequest, conflict } from "@/lib/api-utils";
 import { validateProjectConfiguration } from "@/lib/validators/config-schema";
+import { invalidateConfig } from "@/lib/interview/config-cache";
 
 export async function PATCH(
   request: NextRequest,
@@ -66,6 +67,9 @@ export async function PATCH(
       version: { increment: 1 },
     },
   });
+
+  // Invalidate cached config so next chat message picks up the changes
+  invalidateConfig(projectId);
 
   return NextResponse.json({
     configuration: {

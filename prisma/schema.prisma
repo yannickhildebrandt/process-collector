@@ -177,6 +177,7 @@ model InterviewSession {
   title                 String
   status                InterviewStatus @default(IN_PROGRESS)
   currentSummaryJson    Json?
+  lastSummarizedIndex   Int             @default(-1)
   messageRetentionUntil DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt

@@ -52,6 +52,17 @@ async function main() {
     },
   });
 
+  // Create credential account for employee (dev-mode password login)
+  const employeePassword = await hashPassword("employee123");
+  await prisma.account.create({
+    data: {
+      accountId: employee.id,
+      providerId: "credential",
+      userId: employee.id,
+      password: employeePassword,
+    },
+  });
+
   // Create demo Project
   const project = await prisma.project.create({
     data: {
@@ -414,7 +425,7 @@ A customer places an order via the online portal or sales representative.
 
   console.log("Seed complete!");
   console.log("  Consultant: consultant@demo.com / consultant123");
-  console.log("  Employee: employee@client.com (magic link)");
+  console.log("  Employee: employee@client.com / employee123 (or magic link)");
   console.log("  Project: Acme Corp Process Capture");
   console.log("  Sample process: Order-to-Cash");
   console.log("  LLM Providers: mock, claude (default)");

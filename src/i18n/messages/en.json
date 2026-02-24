@@ -18,7 +18,8 @@
     "confirm": "Confirm",
     "language": "Language",
     "german": "German",
-    "english": "English"
+    "english": "English",
+    "menu": "Menu"
   },
   "auth": {
     "signIn": "Sign In",
@@ -147,7 +148,9 @@
     "bpmnSection": "Process Diagram",
     "greetingFallback": "Hello! I'm here to help you document your business process. Please describe what this process is about and we'll get started.",
     "summaryUpdating": "Updating...",
-    "bpmnGenerate": "Generate Diagram"
+    "bpmnGenerate": "Generate Diagram",
+    "tabChat": "Chat",
+    "tabSummary": "Summary"
   },
   "configChat": {
     "title": "Configure via AI",

@@ -70,7 +70,7 @@ export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
       )}
       <div
         ref={containerRef}
-        className="border rounded-md bg-white"
+        className="border rounded-md bg-white dark:bg-card"
         style={{ height }}
       />
     </div>

@@ -37,6 +37,10 @@ export default function InterviewPage() {
   const [interview, setInterview] = useState<InterviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [summaryExtracting, setSummaryExtracting] = useState(false);
+
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchInterview = useCallback(async () => {
     if (!projectId) return;
@@ -125,42 +129,70 @@ export default function InterviewPage() {
     }
   };
 
-  // Refresh summary after each message exchange.
-  // The server extracts the summary asynchronously in onFinish (another AI call
-  // that takes ~6-10s), so we poll every 3s for up to 21s to ensure we catch it.
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Refresh summary after each message exchange via SSE.
+  // The server extracts the summary asynchronously in onFinish (~6-10s),
+  // then pushes the result via EventEmitter → SSE to the client instantly.
+  const cleanupSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+  }, []);
 
   const handleNewMessage = useCallback(() => {
-    // Cancel any existing poll cycle
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current);
-    }
+    if (!projectId) return;
 
-    let attempts = 0;
-    const maxAttempts = 7; // 7 × 3s = 21s max
+    setSummaryExtracting(true);
 
-    const poll = () => {
-      attempts++;
-      fetchInterview();
-      if (attempts < maxAttempts) {
-        pollTimerRef.current = setTimeout(poll, 3000);
-      } else {
-        pollTimerRef.current = null;
+    // Close any existing EventSource (handles rapid messages)
+    cleanupSSE();
+
+    const es = new EventSource(
+      `/api/projects/${projectId}/interviews/${interviewId}/summary-events`
+    );
+    eventSourceRef.current = es;
+
+    es.addEventListener("summary-update", (event) => {
+      try {
+        const summary = JSON.parse(event.data);
+        setInterview((prev) =>
+          prev ? { ...prev, currentSummaryJson: summary } : null
+        );
+      } catch (e) {
+        console.error("[Interview] Failed to parse summary SSE:", e);
       }
-    };
+      setSummaryExtracting(false);
+      cleanupSSE();
+    });
 
-    // First poll after 2s, then every 3s
-    pollTimerRef.current = setTimeout(poll, 2000);
-  }, [fetchInterview]);
+    es.addEventListener("error", () => {
+      cleanupSSE();
+      // Fallback: single fetch after 8s
+      fallbackTimerRef.current = setTimeout(() => {
+        fetchInterview();
+        setSummaryExtracting(false);
+        fallbackTimerRef.current = null;
+      }, 8000);
+    });
 
-  // Clean up poll timer on unmount
+    // Safety net: 30s timeout
+    fallbackTimerRef.current = setTimeout(() => {
+      cleanupSSE();
+      fetchInterview();
+      setSummaryExtracting(false);
+    }, 30000);
+  }, [projectId, interviewId, fetchInterview, cleanupSSE]);
+
+  // Clean up SSE and timers on unmount
   useEffect(() => {
     return () => {
-      if (pollTimerRef.current) {
-        clearTimeout(pollTimerRef.current);
-      }
+      cleanupSSE();
     };
-  }, []);
+  }, [cleanupSSE]);
 
   if (loading) {
     return (
@@ -246,6 +278,7 @@ export default function InterviewPage() {
                 typeof SummaryPanel
               >[0]["summary"]
             }
+            isExtracting={summaryExtracting}
           />
         </div>
       </div>

@@ -11,6 +11,7 @@ import { getAIProvider } from "@/lib/llm/ai-sdk-provider";
 import { buildSystemPrompt } from "@/lib/interview/prompt-builder";
 import { sanitizeUserMessage } from "@/lib/interview/pii-middleware";
 import { extractSummary } from "@/lib/interview/summary-extractor";
+import { emitSummaryUpdate } from "@/lib/interview/summary-events";
 import type { ProcessSummary } from "@/lib/interview/schemas";
 
 type Params = {
@@ -186,6 +187,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           where: { id: interviewId },
           data: { currentSummaryJson: updatedSummary as object },
         });
+        emitSummaryUpdate(interviewId, updatedSummary as Record<string, unknown>);
       } catch (e) {
         console.error("[Chat] Summary extraction failed:", e);
       }

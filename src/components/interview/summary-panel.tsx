@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { generateBpmnXml } from "@/lib/interview/bpmn-generator";
 import type { ProcessSummary as ProcessSummaryType } from "@/lib/interview/schemas";
 import dynamic from "next/dynamic";
@@ -35,20 +36,24 @@ interface ProcessSummary {
 
 interface SummaryPanelProps {
   summary: ProcessSummary | null;
+  isExtracting?: boolean;
 }
 
-export function SummaryPanel({ summary }: SummaryPanelProps) {
+export function SummaryPanel({ summary, isExtracting }: SummaryPanelProps) {
   const t = useTranslations("interview");
 
-  const bpmnXml = useMemo(() => {
-    if (!summary?.steps || summary.steps.length === 0) return null;
+  const [bpmnXml, setBpmnXml] = useState<string | null>(null);
+
+  function handleGenerateBpmn() {
+    if (!summary?.steps || summary.steps.length === 0) return;
     try {
-      return generateBpmnXml(summary as ProcessSummaryType);
+      const xml = generateBpmnXml(summary as ProcessSummaryType);
+      setBpmnXml(xml);
     } catch (e) {
       console.error("[SummaryPanel] BPMN generation failed:", e);
-      return null;
+      setBpmnXml(null);
     }
-  }, [summary]);
+  }
 
   if (!summary) {
     return (
@@ -69,7 +74,15 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t("summaryPanel")}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">{t("summaryPanel")}</CardTitle>
+            {isExtracting && (
+              <span className="flex items-center gap-1.5 text-xs text-blue-600">
+                <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                {t("summaryUpdating")}
+              </span>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {summary.processName && (
@@ -178,12 +191,12 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
         </CardContent>
       </Card>
 
-      {/* Live BPMN Diagram */}
+      {/* On-demand BPMN Diagram */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("bpmnSection")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {bpmnXml ? (
             <div className="h-[300px] overflow-hidden">
               <BpmnViewer xml={bpmnXml} />
@@ -192,6 +205,11 @@ export function SummaryPanel({ summary }: SummaryPanelProps) {
             <p className="text-sm text-muted-foreground">
               {t("bpmnPlaceholder")}
             </p>
+          )}
+          {summary.steps && summary.steps.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleGenerateBpmn}>
+              {t("bpmnGenerate")}
+            </Button>
           )}
         </CardContent>
       </Card>

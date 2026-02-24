@@ -145,7 +145,9 @@
     "errorOccurred": "An error occurred while communicating with the AI assistant. Please try again.",
     "bpmnPlaceholder": "The process diagram will appear here as steps are captured.",
     "bpmnSection": "Process Diagram",
-    "greetingFallback": "Hello! I'm here to help you document your business process. Please describe what this process is about and we'll get started."
+    "greetingFallback": "Hello! I'm here to help you document your business process. Please describe what this process is about and we'll get started.",
+    "summaryUpdating": "Updating...",
+    "bpmnGenerate": "Generate Diagram"
   },
   "configChat": {
     "title": "Configure via AI",

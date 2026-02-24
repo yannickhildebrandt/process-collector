@@ -6,9 +6,10 @@ import { useTranslations } from "next-intl";
 interface BpmnViewerProps {
   xml: string;
   height?: string;
+  onViewerReady?: (viewer: unknown) => void;
 }
 
-export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
+export function BpmnViewer({ xml, height = "500px", onViewerReady }: BpmnViewerProps) {
   const t = useTranslations("processes");
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +38,7 @@ export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
         canvas.zoom("fit-viewport");
 
         setLoading(false);
+        onViewerReady?.(viewer);
       } catch (err) {
         console.error("Failed to render BPMN diagram:", err);
         setError(true);
@@ -49,9 +51,10 @@ export function BpmnViewer({ xml, height = "500px" }: BpmnViewerProps) {
     return () => {
       if (viewer) {
         viewer.destroy();
+        onViewerReady?.(null);
       }
     };
-  }, [xml]);
+  }, [xml, onViewerReady]);
 
   if (error) {
     return (

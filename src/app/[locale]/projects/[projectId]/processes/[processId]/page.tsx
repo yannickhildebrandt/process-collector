@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { useParams } from "next/navigation";
@@ -8,8 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MarkdownViewer } from "@/components/processes/markdown-viewer";
 import { BpmnViewer } from "@/components/processes/bpmn-viewer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, FileImage, FileText } from "lucide-react";
+import type { PaperSize } from "@/lib/export/diagram-export";
 
 interface SummaryJson {
   processName?: string;
@@ -174,6 +184,38 @@ export default function ProcessDetailPage() {
   const [activeTab, setActiveTab] = useState<"diagram" | "documentation">(
     "diagram"
   );
+  const [viewerRef, setViewerRef] = useState<unknown>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleViewerReady = useCallback((viewer: unknown) => {
+    setViewerRef(viewer);
+  }, []);
+
+  const handleExportPng = async () => {
+    if (!viewerRef || !process) return;
+    setExporting(true);
+    try {
+      const { exportDiagramAsPng } = await import("@/lib/export/diagram-export");
+      await exportDiagramAsPng(viewerRef, process.title);
+    } catch (err) {
+      console.error("PNG export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportPdf = async (paperSize: PaperSize) => {
+    if (!viewerRef || !process) return;
+    setExporting(true);
+    try {
+      const { exportDiagramAsPdf } = await import("@/lib/export/diagram-export");
+      await exportDiagramAsPdf(viewerRef, process.title, paperSize);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     fetch(`/api/projects/${projectId}/processes/${processId}`)
@@ -221,6 +263,40 @@ export default function ProcessDetailPage() {
             </div>
           </div>
         </div>
+        {hasBpmn && viewerRef && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={exporting}>
+                <Download className="h-4 w-4 mr-2" />
+                {exporting ? t("exporting") : t("export")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPng}>
+                <FileImage className="h-4 w-4 mr-2" />
+                {t("exportPng")}
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t("exportPdf")}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {(["a4", "a3", "a2", "a1", "a0"] as PaperSize[]).map(
+                    (size) => (
+                      <DropdownMenuItem
+                        key={size}
+                        onClick={() => handleExportPdf(size)}
+                      >
+                        {size.toUpperCase()}
+                      </DropdownMenuItem>
+                    )
+                  )}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Mobile tab bar — only when both content types exist */}
@@ -266,7 +342,7 @@ export default function ProcessDetailPage() {
               activeTab !== "diagram" && "hidden lg:block"
             )}
           >
-            <BpmnViewer xml={process.bpmnXml!} height="100%" />
+            <BpmnViewer xml={process.bpmnXml!} height="100%" onViewerReady={handleViewerReady} />
           </div>
           <div
             className={cn(
@@ -281,7 +357,7 @@ export default function ProcessDetailPage() {
         </div>
       ) : hasBpmn ? (
         <div className="flex-1 min-w-0 overflow-hidden">
-          <BpmnViewer xml={process.bpmnXml!} height="100%" />
+          <BpmnViewer xml={process.bpmnXml!} height="100%" onViewerReady={handleViewerReady} />
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-6">

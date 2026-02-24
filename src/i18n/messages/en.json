@@ -114,7 +114,13 @@
     "backToProject": "Back to Project",
     "tabDiagram": "Diagram",
     "tabDocumentation": "Documentation",
-    "noContent": "This process has not been documented yet."
+    "noContent": "This process has not been documented yet.",
+    "export": "Export",
+    "exportPng": "Export as PNG",
+    "exportPdf": "Export as PDF",
+    "exportPaperSize": "Paper Size",
+    "exporting": "Exporting...",
+    "exportError": "Export failed. Please try again."
   },
   "interview": {
     "startNew": "Start New Interview",

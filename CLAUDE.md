@@ -13,6 +13,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-23
 - N/A (no database changes) (005-brand-design-polish)
 - TypeScript 5.x, Node.js 22+ + Next.js 16.1.6, React 19, bpmn-js 18 (NavigatedViewer), next-intl 4, Tailwind CSS v4 (006-process-detail-viewer)
 - N/A (no schema changes) (006-process-detail-viewer)
+- TypeScript 5.x, Node.js 22+ + Next.js 16.1.6, React 19, bpmn-js 18 (NavigatedViewer), jsPDF, svg2pdf.js (007-diagram-export)
+- N/A (no schema changes, client-side only) (007-diagram-export)
 
 - TypeScript 5.x, Node.js 20+ (LTS) + Next.js 15 (App Router), React 19, (001-platform-foundation)
 
@@ -33,9 +35,9 @@ npm test; npm run lint
 TypeScript 5.x, Node.js 20+ (LTS): Follow standard conventions
 
 ## Recent Changes
+- 007-diagram-export: Added TypeScript 5.x, Node.js 22+ + Next.js 16.1.6, React 19, bpmn-js 18 (NavigatedViewer), jsPDF, svg2pdf.js
 - 006-process-detail-viewer: Added TypeScript 5.x, Node.js 22+ + Next.js 16.1.6, React 19, bpmn-js 18 (NavigatedViewer), next-intl 4, Tailwind CSS v4
 - 005-brand-design-polish: Added TypeScript 5.x, Node.js 22+ + Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, bpmn-js 18
-- 004-ui-refinements: Added TypeScript 5.x, Node.js 22+ + Next.js 16, React 19, Tailwind CSS, shadcn/ui (Radix UI), bpmn-js 18, Better Auth, next-intl 4
 
 
 <!-- MANUAL ADDITIONS START -->

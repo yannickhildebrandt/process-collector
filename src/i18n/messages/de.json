@@ -149,6 +149,10 @@
     "greetingFallback": "Hallo! Ich bin hier, um Ihnen bei der Dokumentation Ihres Geschäftsprozesses zu helfen. Bitte beschreiben Sie, worum es in diesem Prozess geht, und wir legen los.",
     "summaryUpdating": "Wird aktualisiert...",
     "bpmnGenerate": "Diagramm erstellen",
+    "bpmnRegenerate": "Diagramm neu erstellen",
+    "bpmnGenerating": "Erstelle...",
+    "bpmnError": "Diagramm konnte nicht erstellt werden. Klicken zum Wiederholen.",
+    "bpmnNoSummary": "Senden Sie zuerst einige Nachrichten, um ein Diagramm zu erstellen.",
     "tabChat": "Chat",
     "tabSummary": "Zusammenfassung"
   },

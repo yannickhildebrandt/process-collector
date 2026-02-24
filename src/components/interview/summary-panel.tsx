@@ -43,15 +43,18 @@ export function SummaryPanel({ summary, isExtracting }: SummaryPanelProps) {
   const t = useTranslations("interview");
 
   const [bpmnXml, setBpmnXml] = useState<string | null>(null);
+  const [bpmnError, setBpmnError] = useState(false);
 
   function handleGenerateBpmn() {
     if (!summary?.steps || summary.steps.length === 0) return;
+    setBpmnError(false);
     try {
       const xml = generateBpmnXml(summary as ProcessSummaryType);
       setBpmnXml(xml);
     } catch (e) {
       console.error("[SummaryPanel] BPMN generation failed:", e);
       setBpmnXml(null);
+      setBpmnError(true);
     }
   }
 
@@ -201,14 +204,23 @@ export function SummaryPanel({ summary, isExtracting }: SummaryPanelProps) {
             <div className="h-[300px] overflow-hidden">
               <BpmnViewer xml={bpmnXml} />
             </div>
+          ) : bpmnError ? (
+            <button
+              onClick={handleGenerateBpmn}
+              className="w-full text-sm text-destructive hover:underline cursor-pointer text-left"
+            >
+              {t("bpmnError")}
+            </button>
           ) : (
             <p className="text-sm text-muted-foreground">
-              {t("bpmnPlaceholder")}
+              {summary.steps && summary.steps.length > 0
+                ? t("bpmnPlaceholder")
+                : t("bpmnNoSummary")}
             </p>
           )}
           {summary.steps && summary.steps.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleGenerateBpmn}>
-              {t("bpmnGenerate")}
+              {bpmnXml ? t("bpmnRegenerate") : t("bpmnGenerate")}
             </Button>
           )}
         </CardContent>

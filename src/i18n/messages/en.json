@@ -149,6 +149,10 @@
     "greetingFallback": "Hello! I'm here to help you document your business process. Please describe what this process is about and we'll get started.",
     "summaryUpdating": "Updating...",
     "bpmnGenerate": "Generate Diagram",
+    "bpmnRegenerate": "Regenerate Diagram",
+    "bpmnGenerating": "Generating...",
+    "bpmnError": "Failed to generate diagram. Click to retry.",
+    "bpmnNoSummary": "Send some messages first to generate a diagram.",
     "tabChat": "Chat",
     "tabSummary": "Summary"
   },

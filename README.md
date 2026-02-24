@@ -30,6 +30,8 @@ Consultants manage projects, configure industry context and terminology, and rev
 
 ### Recent Additions
 
+- **Interview optimization** — batched summary extraction (every 3 messages instead of every message, ~60% fewer AI calls), incremental extraction (only new messages + existing summary), conversation windowing (last 15 messages sent to AI with full summary in system prompt), and in-memory config caching (5-min TTL) to eliminate redundant DB queries
+- **Rich chat formatting** — AI messages render with progressive markdown (bold, numbered lists, bullet points via ReactMarkdown + remarkGfm). Bot and User icons on chat bubbles. AI instructed to use structured formatting for better readability.
 - **Diagram export** — export BPMN diagrams from the process detail page as high-resolution PNG (2x scale) or vector PDF with selectable paper size (A0–A4, landscape). Dropdown menu with sub-menu for paper sizes. jsPDF and svg2pdf.js are dynamically imported for code splitting.
 - **Process detail viewer** — side-by-side layout with a large BPMN diagram viewer and a structured summary sidebar (steps, roles, systems, metrics). Mobile responsive with tabbed layout below 1024px. Handles content variations gracefully (BPMN only, markdown only, empty state).
 - **Process list on project page** — consultants can now browse and click into documented processes directly from the project detail page
@@ -96,7 +98,7 @@ src/
     validators/            # Zod schemas for config
   i18n/messages/           # en.json, de.json
 prisma/                    # Schema + migrations + seed
-specs/                     # Feature specifications (001–007)
+specs/                     # Feature specifications (001–008)
 tests/integration/         # Vitest integration tests
 ```
 
@@ -186,6 +188,7 @@ This project uses a structured specification workflow (`.specify/`):
 | 005 | Brand Design Polish (Eggers & Partner Colors, Pill Buttons) | Implemented |
 | 006 | Process Detail Viewer (Side-by-Side BPMN + Summary) | Implemented |
 | 007 | Diagram Export (PNG + PDF with Paper Size Selection) | Implemented |
+| 008 | Interview Optimization (Batching, Windowing, Caching, Chat Polish) | Implemented |
 
 ## Architecture Decisions
 
